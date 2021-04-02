@@ -1,5 +1,5 @@
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 
 from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, Table
 
@@ -37,20 +37,17 @@ class Post(Base, UrlMixin, IdMixin):
     post_image_url = Column(String)
     writer_id = Column(Integer, ForeignKey("writer.id"))
     writer = relationship(Writer)
-    comments = relationship("Comment")
     tags = relationship("Tag", secondary=tag_post)
 
 
 class Comment(Base):
     __tablename__ = "comment"
-    comment_id = Column(Integer, primary_key=True, nullable=False)
+    id = Column(Integer, primary_key=True)
     comment_text = Column(Text, nullable=False)
     writer_id = Column(Integer, ForeignKey("writer.id"))
-    post_id = Column(Integer, ForeignKey("post.id"))
-    parent_comment_id = Column(Integer, ForeignKey("comment.id"))
+    parent_id = Column(Integer, ForeignKey("comment.id"))
     writer = relationship(Writer)
-    post = relationship(Post)
-    parent_comment = relationship("Comment")
+    parent = relationship('Comment')
 
 
 class Tag(Base, UrlMixin, IdMixin):

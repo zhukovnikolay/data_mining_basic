@@ -22,6 +22,23 @@ class Database:
             db_instance = model(**data)
         return db_instance
 
+    def create_comment(self, comment_data):
+        session = self.maker()
+        comment_writer = self.get_or_create(session,
+                                            models.Writer,
+                                            {"url": comment_data["writer_data"]["url"]},
+                                            **comment_data["writer_data"])
+        comment = models.Comment(**comment_data["comment_data"])
+        comment.writer = comment_writer
+        try:
+            session.add(comment)
+            session.commit()
+        except Exception:
+            session.rollback()
+        finally:
+            session.close()
+
+
     def create_post(self, data):
         session = self.maker()
         post = None
@@ -30,13 +47,15 @@ class Database:
             if isinstance(instance, models.Post):
                 post = instance
             elif isinstance(instance, models.Writer):
-                post.author = instance
+                post.writer = instance
         post.tags.extend(
             [
                 self.get_or_create(session, models.Tag, {"url": tag_data["url"]}, **tag_data)
                 for tag_data in data["tags_data"]
             ]
         )
+        for comment_data in data["comments_data"]:
+            self.create_comment(comment_data)
         try:
             session.add(post)
             session.commit()
@@ -44,4 +63,3 @@ class Database:
             session.rollback()
         finally:
             session.close()
-        print(1)
