@@ -28,7 +28,7 @@ class GbBlogParse:
 
     def _get_response(self, url, *args, **kwargs) -> requests.Response:
         while True:
-            response = requests.get(url, *args, **kwargs)
+            response = requests.get(url, verify=False, *args, **kwargs)
             if response.status_code == 200:
                 return response
             time.sleep(1)

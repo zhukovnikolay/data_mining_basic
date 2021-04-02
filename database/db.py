@@ -54,8 +54,6 @@ class Database:
                 for tag_data in data["tags_data"]
             ]
         )
-        for comment_data in data["comments_data"]:
-            self.create_comment(comment_data)
         try:
             session.add(post)
             session.commit()
@@ -63,3 +61,6 @@ class Database:
             session.rollback()
         finally:
             session.close()
+
+        for comment_data in data["comments_data"]:
+            self.create_comment(comment_data)
