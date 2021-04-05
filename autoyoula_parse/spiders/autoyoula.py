@@ -36,7 +36,7 @@ class AutoyoulaSpider(scrapy.Spider):
         )
 
     def car_parse(self, response):
-        specs = response.css("div.AdvertCard_specs__2FEHc div.AdvertSpecs_row__ljPcX")
+        specs = response.css("div.AdvertCard_specs__2FEHc div.AdvertSpecs_row__ljPcX ::text").extract()
         data = {
             "url": response.url,
             "title": response.css("div.AdvertCard_advertTitle__1S1Ak::text").extract_first(),
@@ -46,13 +46,11 @@ class AutoyoulaSpider(scrapy.Spider):
                 .replace("\u2009", "")
             ),
             "photos_list": response.css("div.FullscreenGallery_snippet__1hAXU::text").extract(),
-            "specs": {a.extract_first(): b.extract_first()
-                      for a, b in
-                      list(zip(specs.css("div.AdvertSpecs_label__2JHnS::text"),
-                               specs.css("div.AdvertSpecs_data__xK2Qx a::text")
-                               )
-                           )
-                      }
+            "specs": {a: b for a, b in list(zip(specs[::2], specs[1::2]))},
+            "description":
+                response.css('div.AdvertCard_description__2bVlR div.AdvertCard_descriptionInner__KnuRi::text')
+                    .extract_first(),
+
         }
 
         yield data
