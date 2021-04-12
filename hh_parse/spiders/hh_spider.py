@@ -25,6 +25,7 @@ class HhSpider(scrapy.Spider):
     name = 'hh_spider'
     allowed_domains = ['hh.ru']
     start_urls = ['https://hh.ru/search/vacancy?schedule=remote&L_profession_id=0&area=113']
+
     done_vacancy_urls = []
     done_company_urls = []
 
@@ -46,8 +47,8 @@ class HhSpider(scrapy.Spider):
 
     hh_company_xpath = {
         "title": '//h1[@data-qa="bloko-header-1"]/span[@data-qa="company-header-title-name"]/text()',
-        "url": '//div[@class="employee-sidebar-wrapper"]//a[@data-qa="sidebar-company-site"]/@href',
-        "scope_list": '//div[@class="employee-sidebar-wrapper"]/p/text()',
+        "url": '//div[@class="employer-sidebar-wrapper"]//a[@data-qa="sidebar-company-site"]/@href',
+        "scope_list": '//div[@class="employer-sidebar-block"]/p/text()',
         "description": '//div[@class="g-user-content"]//text()'
     }
 
@@ -62,27 +63,44 @@ class HhSpider(scrapy.Spider):
             yield from self._get_follow_xpath(response, xpath, callbacks[key])
 
     def vacancy_parse(self, response):
-
+        # проверяем, что по этой вакансии мы еще не проходили (можем попасть повторно в процессе парсинга компании)
         if response.url not in self.done_vacancy_urls:
             self.done_vacancy_urls.append(response.url)
             loader = HHLoader(response=response)
             loader.add_value("url", response.url)
             for key, xpath in self.hh_vacancy_xpath.items():
                 loader.add_xpath(key, xpath)
-#            yield loader.load_item()
 
-        if response.xpath(self.hh_vacancy_xpath['author']) not in self.done_company_urls:
+            yield loader.load_item()
+
+        # проверяем, что по этой компании мы еще не проходили
+        if urljoin('https://hh.ru/',
+                   response.xpath(self.hh_vacancy_xpath['author']).get()
+                   ) not in self.done_company_urls:
             yield from self._get_follow_xpath(
                 response,
-                urljoin("https://hh.ru/",
-                        response.xpath(self.hh_vacancy_xpath['author'])
-                        ),
+                self.hh_vacancy_xpath['author'],
                 self.company_parse
             )
 
+
     def company_parse(self, response):
-        self.done_vacancy_urls.append(response.url)
+        self.done_company_urls.append(response.url)
         loader = HHCompanyLoader(response=response)
+        # получим вакансии компании из json
+        json_url = f'https://hh.ru/shards/employerview/vacancies?currentEmployerId={response.url.split("/")[-1]}&' \
+                   f'json=true&regionType=CURRENT&disableBrowserCache=true'
+        yield response.follow(json_url, callback=self.company_vacancies_parse)
+
         for key, xpath in self.hh_company_xpath.items():
             loader.add_xpath(key, xpath)
         yield loader.load_item()
+
+    # парсим вакансии компании
+    def company_vacancies_parse(self, response):
+        json_response = response.json()
+        vacancies_url_list = []
+        for itm in json_response['vacancies']:
+            vacancies_url_list.append(itm['links']['desktop'])
+        for vacancy_url in vacancies_url_list:
+            yield response.follow(vacancy_url, callback=self.vacancy_parse)
