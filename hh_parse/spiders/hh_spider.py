@@ -18,13 +18,15 @@
 
 import scrapy
 from urllib.parse import urljoin
-from hh_parse.loaders import HHLoader
+from hh_parse.loaders import HHLoader, HHCompanyLoader
 
 
 class HhSpider(scrapy.Spider):
     name = 'hh_spider'
     allowed_domains = ['hh.ru']
     start_urls = ['https://hh.ru/search/vacancy?schedule=remote&L_profession_id=0&area=113']
+    done_vacancy_urls = []
+    done_company_urls = []
 
     hh_pagination_xpath = {
         "pagination": '//div[@data-qa="pager-block"]//a[@data-qa="pager-next"]/@href',
@@ -44,11 +46,9 @@ class HhSpider(scrapy.Spider):
 
     hh_company_xpath = {
         "title": '//h1[@data-qa="bloko-header-1"]/span[@data-qa="company-header-title-name"]/text()',
-        "url": '//p[@class="vacancy-salary"]/span/text()',
-        "scope_list": '//div[@data-qa="vacancy-description"]//text()',
-        "description": '//div[@class="bloko-tag-list"]//'
-                  'div[contains(@data-qa, "skills-element")]/'
-                  'span[@data-qa="bloko-tag__text"]/text()'
+        "url": '//div[@class="employee-sidebar-wrapper"]//a[@data-qa="sidebar-company-site"]/@href',
+        "scope_list": '//div[@class="employee-sidebar-wrapper"]/p/text()',
+        "description": '//div[@class="g-user-content"]//text()'
     }
 
     def _get_follow_xpath(self, response, xpath, callback):
@@ -62,15 +62,27 @@ class HhSpider(scrapy.Spider):
             yield from self._get_follow_xpath(response, xpath, callbacks[key])
 
     def vacancy_parse(self, response):
-        yield from self._get_follow_xpath(
-            response, urljoin("https://hh.ru/", response.xpath(self.hh_vacancy_xpath['author'])), self.company_parse,
-        )
-        loader = HHLoader(response=response)
-        loader.add_value("url", response.url)
-        for key, xpath in self.hh_vacancy_xpath.items():
-            loader.add_xpath(key, xpath)
 
-        yield loader.load_item()
+        if response.url not in self.done_vacancy_urls:
+            self.done_vacancy_urls.append(response.url)
+            loader = HHLoader(response=response)
+            loader.add_value("url", response.url)
+            for key, xpath in self.hh_vacancy_xpath.items():
+                loader.add_xpath(key, xpath)
+#            yield loader.load_item()
+
+        if response.xpath(self.hh_vacancy_xpath['author']) not in self.done_company_urls:
+            yield from self._get_follow_xpath(
+                response,
+                urljoin("https://hh.ru/",
+                        response.xpath(self.hh_vacancy_xpath['author'])
+                        ),
+                self.company_parse
+            )
 
     def company_parse(self, response):
-        pass
+        self.done_vacancy_urls.append(response.url)
+        loader = HHCompanyLoader(response=response)
+        for key, xpath in self.hh_company_xpath.items():
+            loader.add_xpath(key, xpath)
+        yield loader.load_item()
