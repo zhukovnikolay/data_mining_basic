@@ -15,7 +15,6 @@ NEWSPIDER_MODULE = 'avito_parse.spiders'
 LOG_ENABLE = True
 LOG_LEVEL = "DEBUG"
 
-
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:86.0) Gecko/20100101 Firefox/86.0'
 
@@ -53,11 +52,11 @@ DEFAULT_REQUEST_HEADERS = {
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
-DOWNLOADER_MIDDLEWARES = {
+#DOWNLOADER_MIDDLEWARES = {
 #    'avito_parse.middlewares.AvitoParseDownloaderMiddleware': 543,
-    "rotating_proxies.middlewares.RotatingProxyMiddleware": 610,
-    "rotating_proxies.middlewares.BanDetectionMiddleware": 620,
-}
+#    "rotating_proxies.middlewares.RotatingProxyMiddleware": 610,
+#    "rotating_proxies.middlewares.BanDetectionMiddleware": 620,
+#}
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
@@ -72,7 +71,7 @@ ITEM_PIPELINES = {
     "avito_parse.pipelines.AvitoParseMongoPipeline": 400
 }
 
-DOWNLOAD_DELAY = 0.1
+DOWNLOAD_DELAY = 5
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
 AUTOTHROTTLE_ENABLED = True
@@ -93,6 +92,6 @@ AUTOTHROTTLE_DEBUG = True
 #HTTPCACHE_DIR = 'httpcache'
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
-ROTATING_PROXY_LIST_PATH = (
-    "/Users/nikolayzhukov/PycharmProjects/data_mining_basic/proxies"
-)
+#ROTATING_PROXY_LIST_PATH = (
+#    "/Users/nikolayzhukov/PycharmProjects/data_mining_basic/proxies"
+#)
