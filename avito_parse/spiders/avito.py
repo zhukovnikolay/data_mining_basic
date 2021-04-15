@@ -26,19 +26,16 @@ class AvitoSpider(scrapy.Spider):
             yield response.follow(url, callback=callback)
 
     def parse(self, response):
-        callbacks = {"pagination": self.parse, "advert": self.advert_parse}
         if self.current_page == 1:
             max_page = int(response.xpath(AVITO_PAGE_XPATH['pagination']).extract()[-1].
                            split('(')[-1].replace(')', ''))
-        for key, xpath in AVITO_PAGE_XPATH.items():
-            if key == 'pagination' and self.current_page <= max_page:
-                self.current_page += 1
-                yield response.follow(
-                    f'?p={self.current_page}',
-                    callback=callbacks[key]
-                )
-            elif key == 'advert':
-                yield from self._get_follow_advert_xpath(response, xpath, callbacks[key])
+            while self.current_page <= max_page:
+                    self.current_page += 1
+                    yield response.follow(
+                        f'?p={self.current_page}',
+                        callback=self.parse
+                    )
+        yield from self._get_follow_advert_xpath(response, AVITO_PAGE_XPATH['advert'], self.advert_parse)
 
     def advert_parse(self, response):
         loader = AvitoLoader(response=response)

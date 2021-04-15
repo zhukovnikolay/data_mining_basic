@@ -15,7 +15,7 @@ AVITO_OBJECT_XPATH = {
 
     'address': '//div[@itemprop="address"]/span/text()',
 
-#!    'params': '//div[@class="item-params"]/ul[@class="item-params-list"]/li[@class="item-params-list-item"]',
+    'params': '//div[@class="item-params"]/ul[@class="item-params-list"]/li[@class="item-params-list-item"]',
 
     'author_url': '//div[@data-marker="seller-info/name"]/a/@href'
 }

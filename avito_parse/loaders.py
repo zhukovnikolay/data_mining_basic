@@ -12,21 +12,33 @@ def clear_price(price: str) -> float:
         result = None
     return result
 
+
 def get_params(item: str) -> dict:
     selector = Selector(text=item)
+    not_null_selector = [i for i in selector.xpath("//text()").extract() if i != ' ']
     data = {
-        "name": selector.xpath("//span/text()").extract_first(),
-        "value": selector.xpath("//text()").extract_first(),
+        "name": not_null_selector[0].strip(),
+        "value": not_null_selector[1].strip().replace('\xa0', ' ')
     }
     return data
 
-def avito_user_url(user_url):
-    return user_url.split('&')[0]
 
-# title = replace('\xa0','')
+def avito_user_url(user_url):
+    return urljoin('https://www.avito.ru', user_url.split('&')[0])
+
+
+def clear_title(title):
+    return title.replace('\xa0', '')
+
+
+def clear_address(address):
+    return address.replace('\n', '').strip()
+
+
 class AvitoLoader(ItemLoader):
     default_item_class = dict
     url_out = TakeFirst()
+    title_in = MapCompose(clear_title)
     title_out = TakeFirst()
     address_out = TakeFirst()
     price_in = MapCompose(clear_price)
